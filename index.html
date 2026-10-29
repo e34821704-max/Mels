@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Three.js Stable CDN -->
+  <!-- Three.js Stable CDN (Standard Script, Not Modules) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <style>
@@ -39,7 +39,7 @@
       top: 0; left: 0;
       width: 100%; height: 100vh;
       z-index: 0;
-      pointer-events: none;
+      pointer-events: none; /* Allows clicking through to the website */
     }
 
     /* Main Layout */
@@ -118,7 +118,7 @@
       box-shadow: 0 25px 45px rgba(0,0,0,0.8), 0 0 20px rgba(196, 154, 108, 0.2);
     }
 
-    /* NEW: Image Container Styles */
+    /* Image Container Styles */
     .card-image-container {
       width: 100%;
       height: 250px;
@@ -134,7 +134,7 @@
       transition: transform 0.5s ease;
     }
     .menu-card:hover .card-image-container img {
-      transform: scale(1.05); /* Slight zoom effect on hover */
+      transform: scale(1.05);
     }
 
     .card-content {
@@ -226,7 +226,6 @@
         <!-- Chapman -->
         <div class="menu-card">
           <div class="card-image-container">
-            <!-- Replace 'images/chapman.jpg' with your actual image path or URL -->
             <img src="images/chapman.jpg" alt="Chapman Mocktail" onerror="this.src='https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=600&auto=format&fit=crop'">
           </div>
           <div class="card-content">
@@ -757,167 +756,221 @@
 
   <!-- Three.js 3D Background Scene -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    // Wait for the window to load completely
+    window.addEventListener('load', function() {
+      // Check if Three.js loaded correctly
+      if (typeof THREE === 'undefined') {
+        console.error('Three.js failed to load.');
+        return;
+      }
+
       const container = document.getElementById('canvas-container');
+      
+      // 1. Scene Setup
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x06080a);
-      scene.fog = new THREE.FogExp2(0x06080a, 0.03);
+      // Removing the solid background color so the CSS background shows through slightly, 
+      // but setting fog for depth
+      scene.fog = new THREE.FogExp2(0x06080a, 0.02);
 
       const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 3, 12);
+      camera.position.set(0, 2, 16);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(renderer.domElement);
 
-      // Lights
-      const ambientLight = new THREE.AmbientLight(0x2a2a3a);
+      // 2. Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
       scene.add(ambientLight);
 
-      const keyLight = new THREE.PointLight(0xe6c8a0, 1.5, 40);
-      keyLight.position.set(5, 8, 5);
-      scene.add(keyLight);
+      const planetLight = new THREE.PointLight(0xe6c8a0, 2, 50);
+      planetLight.position.set(5, 5, 5);
+      scene.add(planetLight);
 
-      const fillLight = new THREE.PointLight(0x4a5a7a, 0.8, 30);
-      fillLight.position.set(-5, 3, 4);
-      scene.add(fillLight);
+      const backLight = new THREE.PointLight(0x4a5a7a, 1.5, 50);
+      backLight.position.set(-5, -5, -5);
+      scene.add(backLight);
 
-      const rimLight = new THREE.PointLight(0xc49a6c, 1.2, 50);
-      rimLight.position.set(-3, 6, -10);
-      scene.add(rimLight);
-
-      const blueLight = new THREE.PointLight(0x3a4f6e, 0.6);
-      blueLight.position.set(8, -2, -4);
-      scene.add(blueLight);
-
-      // --- 3D Objects ---
+      // 3. The Moving Planet
+      const planetGroup = new THREE.Group();
       
-      const knotGeo = new THREE.TorusKnotGeometry(1.5, 0.4, 150, 20);
-      const knotMat = new THREE.MeshStandardMaterial({
-        color: 0xc49a6c,
-        emissive: 0x5a3f28,
-        roughness: 0.2,
-        metalness: 0.8,
-        transparent: true,
-        opacity: 0.85,
+      // Base Planet Sphere
+      const planetGeo = new THREE.SphereGeometry(3.5, 64, 64);
+      const planetMat = new THREE.MeshStandardMaterial({
+        color: 0xc49a6c, // Gold/Bronze tone
+        roughness: 0.6,
+        metalness: 0.4,
+        emissive: 0x2a1e12,
         emissiveIntensity: 0.5
       });
-      const knot = new THREE.Mesh(knotGeo, knotMat);
-      knot.position.set(3, 1, -6);
-      scene.add(knot);
+      const planet = new THREE.Mesh(planetGeo, planetMat);
+      planetGroup.add(planet);
 
-      const sphereMat1 = new THREE.MeshStandardMaterial({ color: 0xe6c8a0, roughness: 0.1, metalness: 0.4, emissive: 0x4a3020, emissiveIntensity: 0.4 });
-      const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 32, 32), sphereMat1);
-      sphere1.position.set(-4, 3, -4);
-      scene.add(sphere1);
+      // Planet Ring
+      const ringGeo = new THREE.TorusGeometry(5, 0.1, 16, 100);
+      const ringMat = new THREE.MeshStandardMaterial({
+        color: 0xe6c8a0,
+        emissive: 0x5a3f28,
+        emissiveIntensity: 0.8,
+        transparent: true,
+        opacity: 0.7
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2.5;
+      ring.rotation.y = Math.PI / 8;
+      planetGroup.add(ring);
 
-      const sphereMat2 = new THREE.MeshStandardMaterial({ color: 0xb88a5b, roughness: 0.15, metalness: 0.7, emissive: 0x2a1e12, emissiveIntensity: 0.3 });
-      const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), sphereMat2);
-      sphere2.position.set(5, -1.5, -3);
-      scene.add(sphere2);
+      // Planet Atmosphere (Glow)
+      const glowGeo = new THREE.SphereGeometry(3.6, 64, 64);
+      const glowMat = new THREE.MeshBasicMaterial({
+        color: 0xe6c8a0,
+        transparent: true,
+        opacity: 0.1,
+        side: THREE.BackSide
+      });
+      const glow = new THREE.Mesh(glowGeo, glowMat);
+      planetGroup.add(glow);
 
-      const sphereMat3 = new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.1, metalness: 0.6, emissive: 0x5a3f28, emissiveIntensity: 0.5 });
-      const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(0.7, 32, 32), sphereMat3);
-      sphere3.position.set(-3, -2, -7);
-      scene.add(sphere3);
+      // Position planet in the background
+      planetGroup.position.set(0, 0, -10);
+      scene.add(planetGroup);
 
-      const ringGeo = new THREE.TorusGeometry(1.2, 0.08, 24, 64);
-      const ringMat = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.3, metalness: 0.9, emissive: 0x6a4a2a, emissiveIntensity: 0.4 });
-      const ring1 = new THREE.Mesh(ringGeo, ringMat);
-      ring1.position.set(6, 3, -8);
-      ring1.rotation.x = Math.PI / 3;
-      ring1.rotation.z = 0.5;
-      scene.add(ring1);
+      // 4. Floating Drinks (Cocktails, Milkshakes, Glasses)
+      const drinksGroup = new THREE.Group();
+      scene.add(drinksGroup);
 
-      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.06, 24, 64), new THREE.MeshStandardMaterial({ color: 0xe6c8a0, roughness: 0.2, metalness: 0.8 }));
-      ring2.position.set(-6, 1.5, -5);
-      ring2.rotation.y = 0.8;
-      ring2.rotation.x = 0.9;
-      scene.add(ring2);
+      // Function to create a stylized 3D glass
+      function createGlass(color, x, y, z, scale) {
+        const glassGroup = new THREE.Group();
 
-      const particleCount = 800;
+        // Glass Cup (Cylinder)
+        const cupGeo = new THREE.CylinderGeometry(0.6, 0.4, 1.2, 32);
+        const cupMat = new THREE.MeshPhysicalMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.3,
+          roughness: 0.1,
+          metalness: 0.1,
+          transmission: 0.9 // Glass-like effect
+        });
+        const cup = new THREE.Mesh(cupGeo, cupMat);
+        cup.position.y = 0;
+        glassGroup.add(cup);
+
+        // Liquid inside
+        const liquidGeo = new THREE.CylinderGeometry(0.55, 0.35, 0.9, 32);
+        const liquidMat = new THREE.MeshStandardMaterial({
+          color: color,
+          emissive: color,
+          emissiveIntensity: 0.3,
+          transparent: true,
+          opacity: 0.85
+        });
+        const liquid = new THREE.Mesh(liquidGeo, liquidMat);
+        liquid.position.y = -0.1;
+        glassGroup.add(liquid);
+
+        // Straw (Optional detail)
+        const strawGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.8, 8);
+        const strawMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const straw = new THREE.Mesh(strawGeo, strawMat);
+        straw.position.set(0.2, 0.6, 0.1);
+        straw.rotation.z = -0.2;
+        glassGroup.add(straw);
+
+        glassGroup.position.set(x, y, z);
+        glassGroup.scale.set(scale, scale, scale);
+        drinksGroup.add(glassGroup);
+
+        // Return the group so we can animate it
+        return glassGroup;
+      }
+
+      // Create a bunch of drinks with different colors (Mocktails, Milkshakes, Cocktails)
+      const drink1 = createGlass(0xff3366, -6, 2, -5, 1.2); // Strawberry/Ruby
+      const drink2 = createGlass(0x33ccff, 6, -1, -4, 1.0); // Swimming Pool/Blue
+      const drink3 = createGlass(0xffcc00, -5, -3, -6, 1.5); // Mango/Golden
+      const drink4 = createGlass(0x9933ff, 5, 4, -7, 0.9); // Purple Glow
+      const drink5 = createGlass(0x33ff99, -8, 0, -8, 1.1); // Green Goddess
+      const drink6 = createGlass(0xff9933, 8, 1, -9, 1.3); // Citrus/Sunset
+
+      // 5. Floating Particles (Sparkles)
+      const particleCount = 400;
       const particlesGeo = new THREE.BufferGeometry();
       const positions = new Float32Array(particleCount * 3);
       const colors = new Float32Array(particleCount * 3);
+
       for (let i = 0; i < particleCount; i++) {
-        const r = 10 + Math.random() * 15;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos((Math.random() * 2) - 1);
-        const x = Math.sin(phi) * Math.cos(theta) * r;
-        const y = Math.sin(phi) * Math.sin(theta) * r * 0.6;
-        const z = Math.cos(phi) * r - 8;
-        positions[i*3] = x;
-        positions[i*3+1] = y;
-        positions[i*3+2] = z;
+        // Spread particles around the scene
+        positions[i*3] = (Math.random() - 0.5) * 40;
+        positions[i*3+1] = (Math.random() - 0.5) * 30;
+        positions[i*3+2] = (Math.random() - 0.5) * 20 - 5;
         
-        const color = new THREE.Color().setHSL(0.1 + Math.random()*0.1, 0.7, 0.5 + Math.random()*0.4);
+        // Gold and white colors
+        const isGold = Math.random() > 0.5;
+        const color = new THREE.Color(isGold ? 0xe6c8a0 : 0xffffff);
         colors[i*3] = color.r;
         colors[i*3+1] = color.g;
         colors[i*3+2] = color.b;
       }
       particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       particlesGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      const particlesMat = new THREE.PointsMaterial({ 
-        size: 0.12, 
-        vertexColors: true, 
-        transparent: true, 
-        opacity: 0.8, 
+      
+      const particlesMat = new THREE.PointsMaterial({
+        size: 0.15,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.6,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
+      
       const particles = new THREE.Points(particlesGeo, particlesMat);
       scene.add(particles);
 
-      const floorGeo = new THREE.CircleGeometry(20, 32);
-      const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x2a1e12, emissiveIntensity: 0.2, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
-      const floor = new THREE.Mesh(floorGeo, floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -3;
-      scene.add(floor);
+      // 6. Animation Loop
+      const clock = new THREE.Clock();
+      const drinkArray = [drink1, drink2, drink3, drink4, drink5, drink6];
 
       function animate() {
-        const elapsedTime = performance.now() * 0.001;
+        requestAnimationFrame(animate);
+        
+        const elapsedTime = clock.getElapsedTime();
 
-        knot.rotation.x += 0.002;
-        knot.rotation.y += 0.003;
-        knot.rotation.z += 0.001;
+        // Rotate the planet slowly
+        planetGroup.rotation.y += 0.001;
+        planetGroup.rotation.x = Math.sin(elapsedTime * 0.2) * 0.1;
 
-        sphere1.position.y = 3 + Math.sin(elapsedTime * 0.8) * 0.5;
-        sphere2.position.x = 5 + Math.sin(elapsedTime * 0.6) * 0.7;
-        sphere2.position.y = -1.5 + Math.cos(elapsedTime * 0.7) * 0.4;
-        sphere3.position.x = -3 + Math.sin(elapsedTime * 0.9) * 0.6;
-        sphere3.position.y = -2 + Math.cos(elapsedTime * 0.5) * 0.5;
+        // Float the drinks independently
+        drinkArray.forEach((drink, index) => {
+          // Continuous slow rotation
+          drink.rotation.y += 0.01;
+          // Bobbing up and down
+          drink.position.y += Math.sin(elapsedTime * 1.5 + index) * 0.005;
+          // Slight side-to-side drift
+          drink.position.x += Math.cos(elapsedTime * 0.8 + index) * 0.005;
+        });
 
-        ring1.rotation.x += 0.003;
-        ring1.rotation.y += 0.002;
-        ring2.rotation.y += 0.002;
-        ring2.rotation.z += 0.0015;
+        // Slowly rotate the particle field
+        particles.rotation.y += 0.0005;
 
-        camera.lookAt(0, 1, -4);
-
-        particles.rotation.y += 0.0002;
-        particles.rotation.x += 0.0001;
+        // Subtle camera movement based on time (cinematic pan)
+        camera.position.x = Math.sin(elapsedTime * 0.1) * 2;
+        camera.position.y = Math.cos(elapsedTime * 0.15) * 1 + 2;
+        camera.lookAt(0, 0, -5);
 
         renderer.render(scene, camera);
-        requestAnimationFrame(animate);
       }
 
+      // Start animation
       animate();
 
+      // 7. Handle Window Resize
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      document.addEventListener('mousemove', (event) => {
-        const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-        const mouseY = (event.clientY / window.innerHeight) * 2 - 1;
-        
-        camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.02;
-        camera.position.y += (-mouseY * 1.0 + 3 - camera.position.y) * 0.02;
-        camera.lookAt(0, 1, -4);
       });
     });
   </script>
