@@ -1,1 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEL'S COCKTAILS & MOCKTAILS · 3D Luxury</title>
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Three.js -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+  
+  <style>
+    /* global reset & base */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #06080a;
+      color: #f0eae3;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    
+    /* typography */
+    h1, h2, h3, h4 { font-family: 'Playfair Display', serif; font-weight: 600; }
+    .gold-text {
+      background: linear-gradient(135deg, #f5e6d3, #e6c8a0, #b88a5b);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
 
+    /* 3D Canvas Background */
+    #canvas-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .main-content {
+      position: relative;
+      z-index: 10;
+      pointer-events: auto;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 4rem;
+      background: rgba(6, 8, 10, 0.8);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(196, 154, 108, 0.3);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; letter-spacing: 2px; }
+    .logo span { color: #c49a6c; }
+    .nav-links a {
+      color: #ccc; text-decoration: none; margin-left: 2rem; font-weight: 500; font-size: 0.95rem; transition: 0.3s;
+    }
+    .nav-links a:hover { color: #e6c8a0; }
+
+    /* Hero */
+    .hero {
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 8rem 2rem; min-height: 85vh;
+    }
+    .hero h1 {
+      font-size: clamp(3.5rem, 8vw, 7rem); line-height: 1.1; text-transform: uppercase;
+      letter-spacing: 4px; filter: drop-shadow(0 0 30px rgba(196, 154, 108, 0.4));
+    }
+    .hero p {
+      font-size: 1.2rem; max-width: 600px; margin: 1.5rem auto 3rem; color: #b0a89f; letter-spacing: 2px;
+      font-family: 'Playfair Display', serif; font-style: italic;
+    }
+    .cta-button {
+      background: transparent; border: 1.5px solid #c49a6c; color: #f0eae3;
+      padding: 1rem 3rem; font-size: 1rem; font-weight: 600; border-radius: 50px;
+      cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 3px;
+      box-shadow: 0 0 20px rgba(196, 154, 108, 0.1);
+    }
+    .cta-button:hover {
+      background: #c49a6c; color: #06080a; box-shadow: 0 0 30px rgba(196, 154, 108, 0.5);
+    }
+
+    /* Menu Sections */
+    .menu-section {
+      padding: 5rem 4rem; background: rgba(6, 8, 10, 0.7); backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(196, 154, 108, 0.2);
+    }
+    .section-header { text-align: center; margin-bottom: 4rem; }
+    .section-header h2 { font-size: 3.5rem; margin-bottom: 0.5rem; }
+    .section-header p { color: #c49a6c; letter-spacing: 4px; font-size: 0.9rem; text-transform: uppercase; }
+
+    .menu-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem; max-width: 1400px; margin: 0 auto;
+    }
+
+    /* Menu Cards */
+    .menu-card {
+      background: rgba(15, 18, 22, 0.85); border: 1px solid rgba(196, 154, 108, 0.2);
+      border-radius: 20px; padding: 2rem; transition: all 0.4s ease;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6); position: relative; overflow: hidden;
+    }
+    .menu-card:hover {
+      transform: translateY(-8px); border-color: #c49a6c;
+      box-shadow: 0 25px 45px rgba(0,0,0,0.8), 0 0 20px rgba(196, 154, 108, 0.2);
+    }
+    .menu-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 10% 10%, rgba(196, 154, 108, 0.1), transparent 60%);
+      pointer-events: none;
+    }
+    .card-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+    .card-title-row h3 { font-size: 1.6rem; color: #fff; }
+    .price-badge {
+      background: rgba(196, 154, 108, 0.15); border: 1px solid #c49a6c; color: #e6c8a0;
+      padding: 0.3rem 1rem; border-radius: 30px; font-weight: 700; font-family: 'Inter', sans-serif;
+      font-size: 1.1rem; white-space: nowrap;
+    }
+    .ingredients, .taste {
+      font-size: 0.9rem; color: #a8a099; margin-bottom: 0.8rem; display: flex; gap: 10px;
+    }
+    .ingredients i, .taste i { color: #c49a6c; margin-top: 4px; width: 16px; text-align: center; }
+    .taste { color: #d4c8bc; font-style: italic; margin-bottom: 0; }
+
+    /* Payment Details Section */
+    .payment-section {
+      padding: 6rem 2rem; background: linear-gradient(to bottom, rgba(6,8,10,0.9), #06080a);
+      text-align: center; border-top: 1px solid rgba(196, 154, 108, 0.3);
+    }
+    .payment-card {
+      max-width: 800px; margin: 0 auto; background: rgba(15, 18, 22, 0.9);
+      border: 1px solid #c49a6c; border-radius: 24px; padding: 3rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(196, 154, 108, 0.1);
+    }
+    .payment-card h2 { font-size: 2.5rem; margin-bottom: 1rem; }
+    .bank-details {
+      display: flex; flex-wrap: wrap; justify-content: space-around; gap: 2rem; margin-top: 2rem;
+      text-align: left;
+    }
+    .bank-box { background: rgba(0,0,0,0.4); padding: 1.5rem; border-radius: 12px; flex: 1; min-width: 250px; }
+    .bank-box h4 { color: #c49a6c; margin-bottom: 0.5rem; font-size: 1.2rem; font-family: 'Inter', sans-serif;}
+    .bank-box p { color: #ccc; font-size: 1rem; margin-bottom: 0.3rem; }
+    .bank-box strong { color: #fff; font-weight: 600; }
+
+    /* Footer */
+    footer {
+      text-align: center; padding: 2rem; background: #040506; color: #888;
+      font-size: 0.9rem; letter-spacing: 1px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      header { padding: 1rem 2rem; flex-direction: column; gap: 1rem; }
+      .nav-links a { margin: 0 0.5rem; font-size: 0.85rem; }
+      .menu-section { padding: 3rem 1.5rem; }
+      .section-header h2 { font-size: 2.5rem; }
+      .hero h1 { font-size: 3rem; }
+      .payment-card { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 3D canvas background -->
+  <div id="canvas-container"></div>
+
+  <div class="main-content">
+    <header>
+      <div class="logo"><span>MEL'S</span> COCKTAILS</div>
+      <div class="nav-links">
+        <a href="#mocktails">Classic Mocktails</a>
+        <a href="#cocktails">Cocktails</a>
+        <a href="#smoothies">Smoothies</a>
+        <a href="#payment">Payment</a>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="gold-text">MEL'S<br>COCKTAILS</h1>
+      <p>"More than a drink... it's an experience."</p>
+      <button class="cta-button" onclick="document.getElementById('mocktails').scrollIntoView({behavior:'smooth'});">Explore Menu</button>
+    </section>
+
+    <!-- CLASSIC MOCKTAILS -->
+    <section class="menu-section" id="mocktails">
+      <div class="section-header">
+        <h2 class="gold-text">Classic Mocktails</h2>
+        <p>Unique Flavours · Exceptional Vibes</p>
+      </div>
+      <div class="menu-grid">
+        <!-- Chapman -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Chapman</h3><span class="price-badge">₦3,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Sprite, Grenadine, Fanta, Orange juice, Angostura Bitters</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, fruity, refreshing.</span></div>
+        </div>
+        <!-- Virgin Mojito -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Virgin Mojito</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Mint leaf, Brown sugar, Lime juice, Soda</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Crisp, minty, light and refreshing.</span></div>
+        </div>
+        <!-- Virgin Colada -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Virgin Colada</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Pineapple, Colada mix, Pineapple juice, Cream</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Creamy, tropical, smooth.</span></div>
+        </div>
+        <!-- Fruit Punch -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Fruit Punch</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Mango syrup, Peach syrup, Passion fruit syrup, Orange juice, Ice cream, Lemon juice (for lime)</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fruity, tangy, sweet.</span></div>
+        </div>
+        <!-- Melly Berry -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Melly Berry</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Pineapple, Strawberry, Apple, Cream, Grenadine syrup</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, fruity, creamy.</span></div>
+        </div>
+        <!-- Swimming Pool Summer -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Swimming Pool Summer</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Lemonade, Pineapple juice, Colada mix, Blue Curacao</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Tropical, sweet, refreshing.</span></div>
+        </div>
+        <!-- Chapman Slushie -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Chapman Slushie</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Lemon juice, Sprite, Fanta, Orange juice, Grenadine</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, tangy, icy.</span></div>
+        </div>
+        <!-- Love Potion -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Love Potion</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Strawberry syrup, Pineapple juice, Lemon juice, Sprite</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, fruity, romantic.</span></div>
+        </div>
+        <!-- Sunset Fizz -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Sunset Fizz</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Orange juice, Pineapple juice, Passion fruit, Fanta, Grenadine</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Citrusy, tropical, refreshing.</span></div>
+        </div>
+        <!-- Tropical Blaze -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Tropical Blaze</h3><span class="price-badge">₦4,500</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Pineapple juice, Mango syrup, Lemon juice, Soda</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Tropical, fruity, zingy.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COCKTAILS -->
+    <section class="menu-section" id="cocktails" style="background: rgba(6, 8, 10, 0.85);">
+      <div class="section-header">
+        <h2 class="gold-text">Cocktails</h2>
+        <p>Classic & Signature Blends</p>
+      </div>
+      <div class="menu-grid">
+        <!-- Long Island Tea -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Long Island Tea</h3><span class="price-badge">₦6,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Five Spirit Top Up With Coke</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Strong, bold, smooth.</span></div>
+        </div>
+        <!-- Adios Mother Fucker (AMF) -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Adios Mother F*cker</h3><span class="price-badge">₦6,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Five Spirit Top Up With Sprite</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fruity, sweet, smooth.</span></div>
+        </div>
+        <!-- Sex on the Beach -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Sex on the Beach</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Vodka, Peach Schnapps, Orange Juice, Cranberry Juice</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fruity, sweet, smooth.</span></div>
+        </div>
+        <!-- Pina Colada -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Pina Colada</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Rum + pineapple juice, cream + coconut liquor</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Tropical, sweet, smooth.</span></div>
+        </div>
+        <!-- Mojito -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Mojito</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Mint leaf + Rum, brown sugar + lime, top up with soda</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fresh, zesty, crisp.</span></div>
+        </div>
+        <!-- Frozen Strawberry Daiquiris -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Frozen Strawberry Daiquiris</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Fresh strawberries, Rum + lime, grenadine syrup</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fruity, tangy, smooth.</span></div>
+        </div>
+        <!-- Tequila Sunrise -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Tequila Sunrise</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Tequila + grenadine, orange juice</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, citrus, smooth.</span></div>
+        </div>
+        <!-- Devils Flirt -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Devils Flirt</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Vodka, white rum, tequila, pineapple juice, orange juice, fresh lime juice, ice.</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Bold, fruity, vibrant, creamy, refreshing.</span></div>
+        </div>
+        <!-- Midnight Kiss -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Midnight Kiss</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Vodka, Cranberry, Blue Curacao, lemon sprite</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sharp, fruity, bold.</span></div>
+        </div>
+        <!-- Forbidden Love -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Forbidden Love</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Vodka, Strawberry, Cranberry, Lemon sprite</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, tangy, irresistible.</span></div>
+        </div>
+        <!-- Liquor Sunrise -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Liquor Sunrise</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Rum, Pineapple, Orange, Grenadine.</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fruity, tropical, smooth.</span></div>
+        </div>
+        <!-- Strawbsin -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Strawbsin</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Vodka, Strawberry, lemon + sprite</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fruity, fresh, sweet.</span></div>
+        </div>
+        <!-- Blue Temptation -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Blue Temptation</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Vodka, Blue Curacao, Pineapple Juice.</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, fruity, bold.</span></div>
+        </div>
+        <!-- Ginger Mels -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Ginger Mels</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Rum + vodka + lime, Fresh ginger + top up with soda</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Warm, spicy, bold.</span></div>
+        </div>
+        <!-- Red Temptation -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Red Temptation</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Tequila, Gin And Vodka</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Bold, fruity, vibrant.</span></div>
+        </div>
+        <!-- Creamy Pussy -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Creamy Pussy</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> Rum, Coconut Cream, Pineapple + Vanilla</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Smooth, creamy and simply dreamy.</span></div>
+        </div>
+        <!-- Cola Kiss -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Cola Kiss</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-wine-glass"></i><span><strong>Ingredients:</strong> vodka + pineapple + white rum</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Sweet, fizzy, bold.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIGNATURE SMOOTHIES -->
+    <section class="menu-section" id="smoothies">
+      <div class="section-header">
+        <h2 class="gold-text">Signature Smoothies</h2>
+        <p>Fresh · Natural · Delicious</p>
+      </div>
+      <div class="menu-grid">
+        <!-- Ruby Glow -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Ruby Glow</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Beetroot, Pineapple, Apple, Ginger</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> A robust blend with a refreshing kick.</span></div>
+        </div>
+        <!-- Watermelon Kiss -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Watermelon Kiss</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Watermelon, Cucumber, Pineapple, Ginger</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Very fresh, juicy and refreshing.</span></div>
+        </div>
+        <!-- Berry Red -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Berry Red</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Watermelon, Beetroot, Cream, Banana</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Creamy, fruity and smooth.</span></div>
+        </div>
+        <!-- Fresh Rush -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Fresh Rush</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Cucumber, Watermelon, Ginger, Honey</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Mild, crisp and refreshing.</span></div>
+        </div>
+        <!-- Parfait -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Parfait</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Granular, Banana, Yogurt, Apple, Coconut & Nuts</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Layers of goodness in every bite.</span></div>
+        </div>
+        <!-- Purple Glow -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Purple Glow</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Beetroot, Banana, Pineapple, Cream</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Bold colour, creamy and naturally sweet.</span></div>
+        </div>
+        <!-- Tropical Cream -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Tropical Cream</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Pineapple, Cream, Honey, Banana</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Smooth, creamy and naturally sweet.</span></div>
+        </div>
+        <!-- Green Goddess -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Green Goddess</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Cucumber, Pineapple, Ginger, Apple</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Crisp, fresh and slightly tangy.</span></div>
+        </div>
+        <!-- Golden Cream -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Golden Cream</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Pineapple, Cream, Apple, Banana</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Thick, creamy and tropical.</span></div>
+        </div>
+        <!-- Paradise Blend -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Paradise Blend</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Pineapple, Watermelon, Cream, Banana</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Creamy tropical fruit.</span></div>
+        </div>
+        <!-- Nutrients -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Nutrients</h3><span class="price-badge">₦6,500</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Dates, Honey, Coconut, Granular, Milk, Nuts</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Energy, strength and good health.</span></div>
+        </div>
+        <!-- Garden Fresh -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Garden Fresh</h3><span class="price-badge">₦4,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Cucumber, Honey, Plantain, Milk, Nuts</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Fresh, light and refreshing.</span></div>
+        </div>
+        <!-- Milkshake -->
+        <div class="menu-card">
+          <div class="card-title-row"><h3>Milkshake</h3><span class="price-badge">₦5,000</span></div>
+          <div class="ingredients"><i class="fas fa-blender"></i><span><strong>Ingredients:</strong> Banana, Ice cream, Cream</span></div>
+          <div class="taste"><i class="fas fa-star"></i><span><strong>Taste:</strong> Creamy, smooth and delicious.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYMENT & CONTACT DETAILS -->
+    <section class="payment-section" id="payment">
+      <div class="payment-card">
+        <h2 class="gold-text">Order & Payment</h2>
+        <p style="color: #ccc; margin-bottom: 2rem;">Sip · Refresh · Repeat</p>
+        
+        <div class="bank-details">
+          <div class="bank-box">
+            <h4><i class="fas fa-university"></i> Access Bank</h4>
+            <p>Account Name: <strong>Moffat Melly Marcy</strong></p>
+            <p>Account No: <strong>0692497975</strong></p>
+          </div>
+          <div class="bank-box">
+            <h4><i class="fas fa-mobile-alt"></i> Opay</h4>
+            <p>Account No: <strong>9020038966</strong></p>
+            <p>Account Name: <strong>Melly Mercy Moffat</strong></p>
+          </div>
+        </div>
+
+        <div style="margin-top: 2.5rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+          <h3 style="font-size: 1.8rem; margin-bottom: 1rem;"><i class="fas fa-phone" style="color:#c49a6c;"></i> Tel: 0803 519 0416</h3>
+          <p style="color: #aaa; letter-spacing: 1px;">"Good Food, Good Drinks, Great Vibes"</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2025 MEL'S COCKTAILS · ALL RIGHTS RESERVED</p>
+    </footer>
+  </div>
+
+  <!-- Three.js 3D Background Scene -->
+  <script type="module">
+    import * as THREE from 'three';
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x06080a);
+    scene.fog = new THREE.FogExp2(0x06080a, 0.03);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 3, 12);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0x2a2a3a);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.PointLight(0xe6c8a0, 1.5, 40);
+    keyLight.position.set(5, 8, 5);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.PointLight(0x4a5a7a, 0.8, 30);
+    fillLight.position.set(-5, 3, 4);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.PointLight(0xc49a6c, 1.2, 50);
+    rimLight.position.set(-3, 6, -10);
+    scene.add(rimLight);
+
+    const blueLight = new THREE.PointLight(0x3a4f6e, 0.6);
+    blueLight.position.set(8, -2, -4);
+    scene.add(blueLight);
+
+    // --- 3D Objects ---
+    
+    // Central glowing geometric torus knot
+    const knotGeo = new THREE.TorusKnotGeometry(1.5, 0.4, 150, 20);
+    const knotMat = new THREE.MeshStandardMaterial({
+      color: 0xc49a6c,
+      emissive: 0x5a3f28,
+      roughness: 0.2,
+      metalness: 0.8,
+      transparent: true,
+      opacity: 0.85,
+      emissiveIntensity: 0.5
+    });
+    const knot = new THREE.Mesh(knotGeo, knotMat);
+    knot.position.set(3, 1, -6);
+    scene.add(knot);
+
+    // Floating Ice/Fruit spheres
+    const sphereMat1 = new THREE.MeshStandardMaterial({ color: 0xe6c8a0, roughness: 0.1, metalness: 0.4, emissive: 0x4a3020, emissiveIntensity: 0.4 });
+    const sphere1 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 32, 32), sphereMat1);
+    sphere1.position.set(-4, 3, -4);
+    scene.add(sphere1);
+
+    const sphereMat2 = new THREE.MeshStandardMaterial({ color: 0xb88a5b, roughness: 0.15, metalness: 0.7, emissive: 0x2a1e12, emissiveIntensity: 0.3 });
+    const sphere2 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 32, 32), sphereMat2);
+    sphere2.position.set(5, -1.5, -3);
+    scene.add(sphere2);
+
+    const sphereMat3 = new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.1, metalness: 0.6, emissive: 0x5a3f28, emissiveIntensity: 0.5 });
+    const sphere3 = new THREE.Mesh(new THREE.SphereGeometry(0.7, 32, 32), sphereMat3);
+    sphere3.position.set(-3, -2, -7);
+    scene.add(sphere3);
+
+    // Decorative glowing rings
+    const ringGeo = new THREE.TorusGeometry(1.2, 0.08, 24, 64);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.3, metalness: 0.9, emissive: 0x6a4a2a, emissiveIntensity: 0.4 });
+    const ring1 = new THREE.Mesh(ringGeo, ringMat);
+    ring1.position.set(6, 3, -8);
+    ring1.rotation.x = Math.PI / 3;
+    ring1.rotation.z = 0.5;
+    scene.add(ring1);
+
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.06, 24, 64), new THREE.MeshStandardMaterial({ color: 0xe6c8a0, roughness: 0.2, metalness: 0.8 }));
+    ring2.position.set(-6, 1.5, -5);
+    ring2.rotation.y = 0.8;
+    ring2.rotation.x = 0.9;
+    scene.add(ring2);
+
+    // Floating particles (sparkles)
+    const particleCount = 800;
+    const particlesGeo = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      const r = 10 + Math.random() * 15;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      const x = Math.sin(phi) * Math.cos(theta) * r;
+      const y = Math.sin(phi) * Math.sin(theta) * r * 0.6;
+      const z = Math.cos(phi) * r - 8;
+      positions[i*3] = x;
+      positions[i*3+1] = y;
+      positions[i*3+2] = z;
+      
+      const color = new THREE.Color().setHSL(0.1 + Math.random()*0.1, 0.7, 0.5 + Math.random()*0.4);
+      colors[i*3] = color.r;
+      colors[i*3+1] = color.g;
+      colors[i*3+2] = color.b;
+    }
+    particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const particlesMat = new THREE.PointsMaterial({ 
+      size: 0.12, 
+      vertexColors: true, 
+      transparent: true, 
+      opacity: 0.8, 
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const particles = new THREE.Points(particlesGeo, particlesMat);
+    scene.add(particles);
+
+    // Faint glowing floor
+    const floorGeo = new THREE.CircleGeometry(20, 32);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x2a1e12, emissiveIntensity: 0.2, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -3;
+    scene.add(floor);
+
+    // Animation Loop
+    const clock = new THREE.Clock();
+
+    function animate() {
+      const elapsedTime = performance.now() * 0.001;
+
+      knot.rotation.x += 0.002;
+      knot.rotation.y += 0.003;
+      knot.rotation.z += 0.001;
+
+      sphere1.position.y = 3 + Math.sin(elapsedTime * 0.8) * 0.5;
+      sphere2.position.x = 5 + Math.sin(elapsedTime * 0.6) * 0.7;
+      sphere2.position.y = -1.5 + Math.cos(elapsedTime * 0.7) * 0.4;
+      sphere3.position.x = -3 + Math.sin(elapsedTime * 0.9) * 0.6;
+      sphere3.position.y = -2 + Math.cos(elapsedTime * 0.5) * 0.5;
+
+      ring1.rotation.x += 0.003;
+      ring1.rotation.y += 0.002;
+      ring2.rotation.y += 0.002;
+      ring2.rotation.z += 0.0015;
+
+      camera.lookAt(0, 1, -4);
+
+      particles.rotation.y += 0.0002;
+      particles.rotation.x += 0.0001;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Window Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Subtle Mouse Parallax
+    document.addEventListener('mousemove', (event) => {
+      const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+      const mouseY = (event.clientY / window.innerHeight) * 2 - 1;
+      
+      camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.02;
+      camera.position.y += (-mouseY * 1.0 + 3 - camera.position.y) * 0.02;
+      camera.lookAt(0, 1, -4);
+    });
+  </script>
+</body>
+</html>
